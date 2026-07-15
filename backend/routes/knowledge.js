@@ -6,6 +6,8 @@ const fs = require('fs');
 const Folder = require('../models/Folder');
 const Document = require('../models/Document');
 const Note = require('../models/Note');
+const Graph = require('../models/Graph');
+const SavedPrompt = require('../models/SavedPrompt');
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads');
@@ -279,6 +281,31 @@ router.get('/all-files', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch all files' });
+  }
+});
+// DELETE /api/knowledge/clear-all - Wipe all knowledge base data
+router.delete('/clear-all', async (req, res) => {
+  try {
+    await Document.deleteMany({});
+    await Note.deleteMany({});
+    await Folder.deleteMany({});
+    await Graph.deleteMany({});
+    await SavedPrompt.deleteMany({});
+    
+    // Clear uploads directory
+    if (fs.existsSync(uploadDir)) {
+      const files = fs.readdirSync(uploadDir);
+      for (const file of files) {
+        if (file !== '.gitkeep') {
+          fs.unlinkSync(path.join(uploadDir, file));
+        }
+      }
+    }
+    
+    res.json({ message: 'All data cleared successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to clear data' });
   }
 });
 

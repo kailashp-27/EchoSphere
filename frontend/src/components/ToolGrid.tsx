@@ -52,14 +52,6 @@ const ToolGrid: React.FC<ToolGridProps> = ({ onNavigate }) => {
       actionId: 'concept-explainer'
     },
     {
-      title: 'Essay Helper',
-      description: 'Draft outlines and structure essays based on your sources.',
-      icon: Edit3,
-      tag: 'RAG',
-      color: 'text-blue-500 dark:text-blue-400',
-      bg: 'bg-blue-100 dark:bg-blue-400/10'
-    },
-    {
       title: 'Exam Predictor',
       description: 'Generate potential exam questions from your knowledge base.',
       icon: LineChart,

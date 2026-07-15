@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sparkles, Lightbulb, Check, Copy, Clock, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, Sparkles, Lightbulb, Check, Copy, Clock, BrainCircuit, FileText } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 interface ConceptExplainerWorkspaceProps {
   onNavigate?: (view: string) => void;
@@ -37,13 +38,15 @@ const ConceptExplainerWorkspace: React.FC<ConceptExplainerWorkspaceProps> = ({ o
     
     const startTime = Date.now();
     const apiKey = localStorage.getItem('gemini_api_key') || '';
+    const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
 
     try {
       const res = await fetch('http://localhost:5000/api/tools/explain', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-api-key': apiKey 
+          'x-api-key': apiKey,
+          'x-model-name': llmModel
         },
         body: JSON.stringify({ documentId: selectedFile, depth: explanationDepth })
       });
@@ -99,28 +102,26 @@ const ConceptExplainerWorkspace: React.FC<ConceptExplainerWorkspaceProps> = ({ o
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">Source Document</label>
-                <select
+                <CustomSelect
                   value={selectedFile}
-                  onChange={(e) => setSelectedFile(e.target.value)}
-                  className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="">Select a document to explain...</option>
-                  {files.map(f => (
-                    <option key={f._id} value={f._id}>{f.name} ({f.type})</option>
-                  ))}
-                </select>
+                  onChange={setSelectedFile}
+                  placeholder="Select a document to explain"
+                  icon={<FileText className="w-4 h-4" />}
+                  options={files.map(f => ({ value: f._id, label: `${f.name} (${f.type})` }))}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">Explanation Depth</label>
-                <select
+                <CustomSelect
                   value={explanationDepth}
-                  onChange={(e) => setExplanationDepth(e.target.value)}
-                  className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="beginner">Simple & Beginner Friendly</option>
-                  <option value="feynman">Feynman Technique (Like teaching a child)</option>
-                  <option value="expert">Advanced & Technical</option>
-                </select>
+                  onChange={setExplanationDepth}
+                  placeholder="Choose depth"
+                  options={[
+                    { value: 'beginner', label: 'Simple & Beginner Friendly' },
+                    { value: 'feynman', label: 'Feynman Technique (Like teaching a child)' },
+                    { value: 'expert', label: 'Advanced & Technical' },
+                  ]}
+                />
               </div>
             </div>
 

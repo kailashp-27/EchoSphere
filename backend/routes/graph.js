@@ -10,8 +10,7 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 //const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
+// Global genAI removed, initialized in route instead
 const SYSTEM_PROMPT = `You are an expert AI instructional designer and educational data engineer. Your task is to extract a structured knowledge graph from the provided educational document to help students map out and study this subject.
 
 ### Extraction Rules:
@@ -87,9 +86,13 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'No text extracted from document' });
     }
 
-    // UPDATED: Use the latest model and enforce strict JSON output
+    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
+    const modelName = req.headers['x-model-name'] || 'gemini-3-flash-preview';
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // UPDATED: Use the selected model and enforce strict JSON output
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-3-flash-preview",
+        model: modelName,
         generationConfig: {
             responseMimeType: "application/json",
         }

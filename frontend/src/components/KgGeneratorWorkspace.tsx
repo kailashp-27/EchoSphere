@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Network, FileText, ArrowLeft, Save, Loader2, Zap, BrainCircuit } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 interface FileOption {
   _id: string;
@@ -78,9 +79,15 @@ const KgGeneratorWorkspace: React.FC<KgGeneratorWorkspaceProps> = ({ onNavigate 
         return;
       }
 
+      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
       const genRes = await fetch('http://localhost:5000/api/graphs/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'x-model-name': llmModel
+        },
         body: JSON.stringify({ documentId: selectedFile })
       });
 
@@ -188,20 +195,18 @@ const KgGeneratorWorkspace: React.FC<KgGeneratorWorkspaceProps> = ({ onNavigate 
           <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6">
             <div className="flex flex-col gap-2 mb-6">
               <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">Source Document</label>
-              <select
+              <CustomSelect
                 value={selectedFile}
-                onChange={(e) => {
-                  setSelectedFile(e.target.value);
+                onChange={(val) => {
+                  setSelectedFile(val);
                   setGraphData(null);
                   setIsSaved(false);
                 }}
-                className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-              >
-                <option value="">Select a document to process...</option>
-                {files.map(f => (
-                  <option key={f._id} value={f._id}>{f.name} ({f.type})</option>
-                ))}
-              </select>
+                placeholder="Select a document to process"
+                icon={<FileText className="w-4 h-4" />}
+                accentColor="indigo"
+                options={files.map(f => ({ value: f._id, label: `${f.name} (${f.type})` }))}
+              />
             </div>
 
             <button

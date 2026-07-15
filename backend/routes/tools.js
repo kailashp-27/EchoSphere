@@ -56,7 +56,8 @@ router.post('/summarize', async (req, res) => {
 
     const textContent = await extractTextFromDocument(documentId);
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     let lengthInstruction = 'a medium-length, comprehensive summary';
     if (length === 'short') lengthInstruction = 'a very brief, concise bullet-point summary';
@@ -87,7 +88,8 @@ router.post('/explain', async (req, res) => {
 
     const textContent = await extractTextFromDocument(documentId);
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     let depthInstruction = 'Explain the core concepts simply, as if to a beginner.';
     if (depth === 'feynman') depthInstruction = 'Use the Feynman Technique: explain it as if teaching a child, using simple analogies and removing all jargon.';

@@ -1,5 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Type, Link as LinkIcon, Folder, Save, Check } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 type IngestionMode = 'editor' | 'web';
 
@@ -95,20 +96,16 @@ const KnowledgeManager: React.FC = () => {
           <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider ml-1">
             Where should this be saved?
           </label>
-          <div className="flex items-center gap-4 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-blue-500 transition-colors rounded-xl p-3 shadow-sm">
-            <Folder className="w-5 h-5 text-blue-500" />
-            <select
-              title="Destination Folder"
-              value={selectedFolderId}
-              onChange={(e) => setSelectedFolderId(e.target.value)}
-              className="flex-1 bg-transparent border-none text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-0 cursor-pointer text-base"
-            >
-              <option value="root" className="text-neutral-900 bg-white">Root (No Folder - Save to Knowledge Base)</option>
-              {folders.map(f => (
-                <option key={f._id} value={f._id} className="text-neutral-900 bg-white">{f.name}</option>
-              ))}
-            </select>
-          </div>
+          <CustomSelect
+            value={selectedFolderId}
+            onChange={setSelectedFolderId}
+            placeholder="Select destination folder"
+            icon={<Folder className="w-4 h-4 text-blue-500" />}
+            options={[
+              { value: 'root', label: 'Root (Knowledge Base — No Folder)' },
+              ...folders.map(f => ({ value: f._id, label: f.name, icon: <Folder className="w-3.5 h-3.5 text-blue-400" /> }))
+            ]}
+          />
         </div>
 
         {activeTab === 'editor' && (

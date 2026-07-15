@@ -299,10 +299,10 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onNavigate }) => {
   const getIconForType = (type: string, className = "w-10 h-10") => {
     switch(type) {
       case 'folder': return <Folder className={`${className} text-blue-500 fill-blue-500/20`} />;
-      case 'pdf': return <FileText className={`${className} text-red-500`} />;
-      case 'docx': return <FileText className={`${className} text-blue-600`} />;
-      case 'note': return <File className={`${className} text-emerald-500`} />;
-      case 'url': return <File className={`${className} text-purple-500`} />;
+      case 'pdf': return <FileText className={`${className} text-red-500 fill-red-500/10`} />;
+      case 'docx': return <FileText className={`${className} text-blue-600 fill-blue-600/10`} />;
+      case 'note': return <FileSignature className={`${className} text-emerald-500 fill-emerald-500/10`} />;
+      case 'url': return <File className={`${className} text-purple-500 fill-purple-500/10`} />;
       default: return <File className={`${className} text-neutral-500`} />;
     }
   };
@@ -344,40 +344,51 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onNavigate }) => {
             </button>
             
             {showCreateMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg z-10 py-2 animate-in fade-in zoom-in-95 duration-200">
-                <button
-                  onClick={() => {
-                    setIsCreatingFolder(true);
-                    setIsEditingFolder(false);
-                    setNewFolderName('');
-                    setNewFolderDesc('');
-                    setShowCreateMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                >
-                  <Folder className="w-4 h-4 text-blue-500" />
-                  Folder
-                </button>
-                <button
-                  onClick={() => {
-                    setIsUploadingPdf(true);
-                    setShowCreateMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                >
-                  <Upload className="w-4 h-4 text-red-500" />
-                  File (PDF/Docx)
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCreateMenu(false);
-                    if (onNavigate) onNavigate('ingest');
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                >
-                  <FileSignature className="w-4 h-4 text-emerald-500" />
-                  Note
-                </button>
+              <div className="absolute right-0 top-full mt-2 w-52 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 rounded-2xl shadow-xl shadow-neutral-900/10 dark:shadow-black/30 z-10 overflow-hidden">
+                <div className="px-3 pt-3 pb-2 border-b border-neutral-100 dark:border-neutral-800">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">Create New</p>
+                </div>
+                <div className="p-1.5 space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setIsCreatingFolder(true);
+                      setIsEditingFolder(false);
+                      setNewFolderName('');
+                      setNewFolderDesc('');
+                      setShowCreateMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl flex items-center gap-3 transition-colors group"
+                  >
+                    <span className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0 group-hover:bg-blue-200 dark:group-hover:bg-blue-500/25 transition-colors">
+                      <Folder className="w-3.5 h-3.5 text-blue-500" />
+                    </span>
+                    <span>New Folder</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUploadingPdf(true);
+                      setShowCreateMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 rounded-xl flex items-center gap-3 transition-colors group"
+                  >
+                    <span className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0 group-hover:bg-red-200 dark:group-hover:bg-red-500/25 transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-red-500" />
+                    </span>
+                    <span>Upload File</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCreateMenu(false);
+                      if (onNavigate) onNavigate('ingest');
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl flex items-center gap-3 transition-colors group"
+                  >
+                    <span className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center shrink-0 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500/25 transition-colors">
+                      <FileSignature className="w-3.5 h-3.5 text-emerald-500" />
+                    </span>
+                    <span>New Note</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -402,13 +413,32 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onNavigate }) => {
 
       {/* Explorer Content */}
       <div className="flex-1 p-6 overflow-y-auto w-full">
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/20 text-center px-4">
+            <div className="w-16 h-16 bg-white dark:bg-neutral-800 shadow-sm rounded-2xl flex items-center justify-center mb-4 text-neutral-400 dark:text-neutral-500">
+              <Folder className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">This folder is empty</h3>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm mb-6">
+              There are no files or folders here. Create a new folder or upload a document to get started.
+            </p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCreateMenu(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add Content
+            </button>
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {items.map((item) => (
               <div 
                 key={item._id}
                 onDoubleClick={() => handleOpenFolder(item)}
-                className="group relative flex flex-col items-start p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 hover:border-blue-500/50 hover:shadow-md dark:hover:shadow-blue-900/20 bg-white dark:bg-neutral-900/50 transition-all cursor-pointer select-none"
+                className="group relative flex flex-col h-[220px] items-start p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 hover:border-blue-500/50 hover:shadow-md dark:hover:shadow-blue-900/20 bg-white dark:bg-neutral-900/50 transition-all cursor-pointer select-none"
               >
                 <div className="flex items-center justify-between w-full mb-4">
                   <div className="p-2.5 bg-neutral-50 dark:bg-neutral-950 rounded-xl">
@@ -427,55 +457,81 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onNavigate }) => {
                     </button>
                     
                     {activeDropdownId === item._id && (
-                      <div ref={dropdownMenuRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg z-20 py-1 animate-in fade-in zoom-in-95 duration-200">
-                        {item.type === 'folder' && (
-                          <>
-                            <button
-                              onClick={(e) => handleEditFolderClicked(item, e)}
-                              className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2"
-                            >
-                              <Edit2 className="w-4 h-4" /> Edit
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteFolder(item._id, e)}
-                              className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" /> Delete
-                            </button>
-                          </>
-                        )}
-                        {item.type === 'note' && (
-                          <>
-                            <button
-                              onClick={(e) => handleEditNoteClicked(item, e)}
-                              className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2"
-                            >
-                              <Edit2 className="w-4 h-4" /> Edit Note
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteDocument(item._id, e)}
-                              className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" /> Delete
-                            </button>
-                          </>
-                        )}
-                        {(item.type === 'pdf' || item.type === 'docx') && (
-                          <>
-                            <button
-                              onClick={(e) => handleDownloadPdf(item._id, item.name, e)}
-                              className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2"
-                            >
-                              <Download className="w-4 h-4" /> Download File
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteDocument(item._id, e)}
-                              className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" /> Delete
-                            </button>
-                          </>
-                        )}
+                      <div ref={dropdownMenuRef} className="absolute right-0 top-full mt-1.5 w-52 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 rounded-2xl shadow-xl shadow-neutral-900/10 dark:shadow-black/30 z-20 overflow-hidden">
+                        <div className="px-3 pt-3 pb-2 border-b border-neutral-100 dark:border-neutral-800">
+                          <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 truncate">{item.name}</p>
+                        </div>
+                        <div className="p-1.5 space-y-0.5">
+                          {item.type === 'folder' && (
+                            <>
+                              <button
+                                onClick={(e) => handleEditFolderClicked(item, e)}
+                                className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl flex items-center gap-3 transition-colors"
+                              >
+                                <span className="w-6 h-6 rounded-md bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                                  <Edit2 className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                                </span>
+                                Edit Details
+                              </button>
+                              <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                              <button
+                                onClick={(e) => handleDeleteFolder(item._id, e)}
+                                className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors"
+                              >
+                                <span className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                </span>
+                                Delete Folder
+                              </button>
+                            </>
+                          )}
+                          {item.type === 'note' && (
+                            <>
+                              <button
+                                onClick={(e) => handleEditNoteClicked(item, e)}
+                                className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl flex items-center gap-3 transition-colors"
+                              >
+                                <span className="w-6 h-6 rounded-md bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                                  <Edit2 className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                                </span>
+                                Edit Note
+                              </button>
+                              <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                              <button
+                                onClick={(e) => handleDeleteDocument(item._id, e)}
+                                className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors"
+                              >
+                                <span className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                </span>
+                                Delete Note
+                              </button>
+                            </>
+                          )}
+                          {(item.type === 'pdf' || item.type === 'docx') && (
+                            <>
+                              <button
+                                onClick={(e) => handleDownloadPdf(item._id, item.name, e)}
+                                className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl flex items-center gap-3 transition-colors"
+                              >
+                                <span className="w-6 h-6 rounded-md bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                                  <Download className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                                </span>
+                                Download File
+                              </button>
+                              <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                              <button
+                                onClick={(e) => handleDeleteDocument(item._id, e)}
+                                className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors"
+                              >
+                                <span className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                </span>
+                                Delete File
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -538,37 +594,51 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onNavigate }) => {
                       </button>
                       
                       {activeDropdownId === item._id && (
-                        <div ref={dropdownMenuRef} className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg z-20 py-1 animate-in fade-in zoom-in-95 duration-200">
-                          {item.type === 'folder' && (
-                            <>
-                              <button onClick={(e) => handleEditFolderClicked(item, e)} className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
-                                <Edit2 className="w-4 h-4" /> Edit
-                              </button>
-                              <button onClick={(e) => handleDeleteFolder(item._id, e)} className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                            </>
-                          )}
-                          {item.type === 'note' && (
-                            <>
-                              <button onClick={(e) => handleEditNoteClicked(item, e)} className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
-                                <Edit2 className="w-4 h-4" /> Edit Note
-                              </button>
-                              <button onClick={(e) => handleDeleteDocument(item._id, e)} className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                            </>
-                          )}
-                          {(item.type === 'pdf' || item.type === 'docx') && (
-                            <>
-                              <button onClick={(e) => handleDownloadPdf(item._id, item.name, e)} className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
-                                <Download className="w-4 h-4" /> Download File
-                              </button>
-                              <button onClick={(e) => handleDeleteDocument(item._id, e)} className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                            </>
-                          )}
+                        <div ref={dropdownMenuRef} className="absolute right-0 top-full mt-1.5 w-52 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 rounded-2xl shadow-xl shadow-neutral-900/10 dark:shadow-black/30 z-20 overflow-hidden">
+                          <div className="px-3 pt-3 pb-2 border-b border-neutral-100 dark:border-neutral-800">
+                            <p className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 truncate">{item.name}</p>
+                          </div>
+                          <div className="p-1.5 space-y-0.5">
+                            {item.type === 'folder' && (
+                              <>
+                                <button onClick={(e) => handleEditFolderClicked(item, e)} className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl flex items-center gap-3 transition-colors">
+                                  <span className="w-6 h-6 rounded-md bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0"><Edit2 className="w-3.5 h-3.5 text-neutral-500" /></span>
+                                  Edit Details
+                                </button>
+                                <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                                <button onClick={(e) => handleDeleteFolder(item._id, e)} className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors">
+                                  <span className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0"><Trash2 className="w-3.5 h-3.5 text-red-500" /></span>
+                                  Delete Folder
+                                </button>
+                              </>
+                            )}
+                            {item.type === 'note' && (
+                              <>
+                                <button onClick={(e) => handleEditNoteClicked(item, e)} className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl flex items-center gap-3 transition-colors">
+                                  <span className="w-6 h-6 rounded-md bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0"><Edit2 className="w-3.5 h-3.5 text-neutral-500" /></span>
+                                  Edit Note
+                                </button>
+                                <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                                <button onClick={(e) => handleDeleteDocument(item._id, e)} className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors">
+                                  <span className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0"><Trash2 className="w-3.5 h-3.5 text-red-500" /></span>
+                                  Delete Note
+                                </button>
+                              </>
+                            )}
+                            {(item.type === 'pdf' || item.type === 'docx') && (
+                              <>
+                                <button onClick={(e) => handleDownloadPdf(item._id, item.name, e)} className="w-full text-left px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl flex items-center gap-3 transition-colors">
+                                  <span className="w-6 h-6 rounded-md bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0"><Download className="w-3.5 h-3.5 text-neutral-500" /></span>
+                                  Download File
+                                </button>
+                                <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                                <button onClick={(e) => handleDeleteDocument(item._id, e)} className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors">
+                                  <span className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0"><Trash2 className="w-3.5 h-3.5 text-red-500" /></span>
+                                  Delete File
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

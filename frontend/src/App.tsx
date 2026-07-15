@@ -8,8 +8,9 @@ import KgGeneratorWorkspace from './components/KgGeneratorWorkspace';
 import SavedPromptsWorkspace from './components/SavedPromptsWorkspace';
 import SmartSummariserWorkspace from './components/SmartSummariserWorkspace';
 import ConceptExplainerWorkspace from './components/ConceptExplainerWorkspace';
+import SettingsWorkspace from './components/SettingsWorkspace';
 
-export type ViewState = 'home' | 'ingest' | 'stored-kb' | 'tools' | 'kg-generator' | 'saved-prompts' | 'smart-summariser' | 'concept-explainer';
+export type ViewState = 'home' | 'ingest' | 'stored-kb' | 'tools' | 'kg-generator' | 'saved-prompts' | 'smart-summariser' | 'concept-explainer' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -58,6 +59,8 @@ function App() {
         return <SmartSummariserWorkspace onNavigate={(v) => setCurrentView(v as ViewState)} />;
       case 'concept-explainer':
         return <ConceptExplainerWorkspace onNavigate={(v) => setCurrentView(v as ViewState)} />;
+      case 'settings':
+        return <SettingsWorkspace isDarkMode={isDarkMode} toggleTheme={toggleTheme} onNavigate={(v) => setCurrentView(v as ViewState)} />;
       default:
         return <Dashboard />;
     }

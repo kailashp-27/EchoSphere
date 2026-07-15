@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Sparkles, FileText, Check, Copy, Clock, BrainCircuit } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 interface SmartSummariserWorkspaceProps {
   onNavigate?: (view: string) => void;
@@ -37,13 +38,15 @@ const SmartSummariserWorkspace: React.FC<SmartSummariserWorkspaceProps> = ({ onN
     
     const startTime = Date.now();
     const apiKey = localStorage.getItem('gemini_api_key') || '';
+    const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
 
     try {
       const res = await fetch('http://localhost:5000/api/tools/summarize', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-api-key': apiKey 
+          'x-api-key': apiKey,
+          'x-model-name': llmModel
         },
         body: JSON.stringify({ documentId: selectedFile, length: summaryLength })
       });
@@ -99,28 +102,26 @@ const SmartSummariserWorkspace: React.FC<SmartSummariserWorkspaceProps> = ({ onN
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">Source Document</label>
-                <select
+                <CustomSelect
                   value={selectedFile}
-                  onChange={(e) => setSelectedFile(e.target.value)}
-                  className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="">Select a document to summarise...</option>
-                  {files.map(f => (
-                    <option key={f._id} value={f._id}>{f.name} ({f.type})</option>
-                  ))}
-                </select>
+                  onChange={setSelectedFile}
+                  placeholder="Select a document to summarise"
+                  icon={<FileText className="w-4 h-4" />}
+                  options={files.map(f => ({ value: f._id, label: `${f.name} (${f.type})` }))}
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400">Summary Length</label>
-                <select
+                <CustomSelect
                   value={summaryLength}
-                  onChange={(e) => setSummaryLength(e.target.value)}
-                  className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="short">Short & Concise (Bullet Points)</option>
-                  <option value="medium">Medium & Comprehensive</option>
-                  <option value="long">Long & Detailed</option>
-                </select>
+                  onChange={setSummaryLength}
+                  placeholder="Choose length"
+                  options={[
+                    { value: 'short', label: 'Short & Concise (Bullet Points)' },
+                    { value: 'medium', label: 'Medium & Comprehensive' },
+                    { value: 'long', label: 'Long & Detailed' },
+                  ]}
+                />
               </div>
             </div>
 
