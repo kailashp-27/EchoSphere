@@ -1,6 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Home, BookOpen, Database, FolderArchive, Wrench, Settings, ChevronLeft, ChevronRight, MessageSquare, X, Send, Bot, Sun, Moon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Home, BookOpen, Database, FolderArchive, Wrench, Settings, ChevronLeft, ChevronRight, MessageSquare, X, Send, Bot, Sun, Moon, BrainCircuit, User } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { ViewState } from '../App';
+
+interface ChatMessage {
+  role: 'user' | 'ai';
+  text: string;
+}
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,6 +21,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  // Chat state
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'ai', text: "Hi! I'm your EchoSphere study assistant. Ask me anything about your stored notes and documents — I'm here to help! 📚" }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
     if (saved === 'true') {
@@ -21,12 +37,74 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
     }
   }, []);
 
+  // Auto-scroll to bottom of chat on new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isThinking]);
+
   const toggleSidebar = () => {
     setIsCollapsed(prev => {
       const next = !prev;
       localStorage.setItem('sidebar_collapsed', next.toString());
       return next;
     });
+  };
+
+  const handleSendMessage = async () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed || isThinking) return;
+
+    setChatError('');
+    const userMessage: ChatMessage = { role: 'user', text: trimmed };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    setInputValue('');
+    setIsThinking(true);
+
+    const apiKey = localStorage.getItem('gemini_api_key') || '';
+    const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+
+    try {
+      // Build history from all messages except the initial greeting and the new user message
+      const history = updatedMessages.slice(1).map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        text: m.text
+      }));
+
+      const res = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'x-model-name': llmModel
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          history: history.slice(0, -1) // exclude the current message from history
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to get response');
+      }
+
+      setMessages(prev => [...prev, { role: 'ai', text: data.reply }]);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setChatError(err.message || 'Something went wrong. Please try again.');
+      setMessages(prev => [...prev, { role: 'ai', text: `⚠️ ${err.message || 'Something went wrong. Please try again.'}` }]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   const navItems = [
@@ -37,7 +115,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
   ] as const;
 
   return (
-    <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-200 font-sans transition-colors duration-200 overflow-hidden relative">
+    <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-200 font-sans transition-colors duration-200 overflow-hidden">
       {/* Sidebar */}
       <aside className={`border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 flex flex-col transition-all duration-300 relative z-10 ${isCollapsed ? 'w-20' : 'w-64'}`}>
         <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
@@ -82,16 +160,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
         </nav>
 
         <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex flex-col gap-2">
+
           <button 
-            onClick={toggleTheme}
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors`}
-            title={isCollapsed ? "Toggle theme" : undefined}
-          >
-            {isDarkMode ? <Sun className="w-5 h-5 shrink-0" /> : <Moon className="w-5 h-5 shrink-0" />}
-            {!isCollapsed && <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>}
-          </button>
-          <button 
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors`}
+            onClick={() => onNavigate('settings')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+              ${currentView === 'settings' 
+                ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-700 dark:text-blue-400' 
+                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-neutral-200'}
+              ${isCollapsed ? 'justify-center' : ''}`}
             title={isCollapsed ? "Settings" : undefined}
           >
             <Settings className="w-5 h-5 shrink-0" />
@@ -110,18 +186,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
       {/* Global Floating Chat Button */}
       <button 
         onClick={() => setIsChatOpen(true)}
-        className="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 z-40"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 z-40"
       >
         <MessageSquare className="w-6 h-6" />
       </button>
 
       {/* Sliding Chat Panel overlay */}
       {isChatOpen && (
-        <div className="absolute inset-0 bg-neutral-950/20 dark:bg-black/40 z-40 backdrop-blur-[2px]" onClick={() => setIsChatOpen(false)} />
+        <div className="fixed inset-0 bg-neutral-950/20 dark:bg-black/40 z-40 backdrop-blur-[2px]" onClick={() => setIsChatOpen(false)} />
       )}
 
       {/* Sliding Chat Panel */}
-      <div className={`absolute top-0 right-0 h-full w-full sm:w-[400px] bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col transform transition-transform duration-300 z-50 ${isChatOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col transform transition-transform duration-300 z-50 ${isChatOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-md flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
@@ -140,12 +216,50 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
 
         {/* Chat History */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4">
-          <div className="bg-neutral-100 dark:bg-neutral-800/50 border border-neutral-200 dark:border-transparent rounded-2xl rounded-tl-sm p-4 max-w-[85%] self-start">
-            <p className="text-sm text-neutral-800 dark:text-neutral-200">Hi! I'm ready to answer questions based on your notes. What are we studying today?</p>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/20 rounded-2xl rounded-tr-sm p-4 max-w-[85%] self-end ml-auto">
-            <p className="text-sm text-blue-900 dark:text-neutral-200">Can you summarize my recent uploads?</p>
-          </div>
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex items-start gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.role === 'user' ? 'bg-blue-600' : 'bg-neutral-200 dark:bg-neutral-700'}`}>
+                  {msg.role === 'user' 
+                    ? <User className="w-3.5 h-3.5 text-white" /> 
+                    : <Bot className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />}
+                </div>
+                <div className={`rounded-2xl p-3.5 text-sm leading-relaxed ${
+                  msg.role === 'user' 
+                    ? 'bg-blue-600 text-white rounded-tr-sm whitespace-pre-wrap' 
+                    : 'bg-neutral-100 dark:bg-neutral-800/50 border border-neutral-200 dark:border-transparent text-neutral-800 dark:text-neutral-200 rounded-tl-sm prose prose-sm dark:prose-invert max-w-none'
+                }`}>
+                  {msg.role === 'ai' ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.text}
+                    </ReactMarkdown>
+                  ) : (
+                    msg.text
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Thinking indicator */}
+          {isThinking && (
+            <div className="flex justify-start">
+              <div className="flex items-start gap-2.5 max-w-[85%]">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 bg-neutral-200 dark:bg-neutral-700">
+                  <BrainCircuit className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300 animate-pulse" />
+                </div>
+                <div className="bg-neutral-100 dark:bg-neutral-800/50 border border-neutral-200 dark:border-transparent rounded-2xl rounded-tl-sm p-3.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={chatEndRef} />
         </div>
 
         {/* Chat Input */}
@@ -153,10 +267,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
           <div className="relative flex items-center">
             <input
               type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Ask a question..."
-              className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl pl-4 pr-12 py-3 text-sm text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+              disabled={isThinking}
+              className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl pl-4 pr-12 py-3 text-sm text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-neutral-400 dark:placeholder:text-neutral-500 disabled:opacity-50"
             />
-            <button className="absolute right-2 p-2 bg-neutral-900 dark:bg-white rounded-lg text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors">
+            <button 
+              onClick={handleSendMessage}
+              disabled={isThinking || !inputValue.trim()}
+              className="absolute right-2 p-2 bg-neutral-900 dark:bg-white rounded-lg text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Send className="w-4 h-4" />
             </button>
           </div>

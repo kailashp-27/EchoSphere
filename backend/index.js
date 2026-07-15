@@ -7,6 +7,7 @@ const knowledgeRoutes = require('./routes/knowledge');
 const graphRoutes = require('./routes/graph');
 const promptRoutes = require('./routes/prompts');
 const toolsRoutes = require('./routes/tools');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +28,7 @@ app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/graphs', graphRoutes);
 app.use('/api/prompts', promptRoutes);
 app.use('/api/tools', toolsRoutes);
+app.use('/api/chat', chatRoutes);
 
 // MongoDB connection
 
