@@ -6,11 +6,12 @@ import FileExplorer from './components/FileExplorer';
 import ToolGrid from './components/ToolGrid';
 import KgGeneratorWorkspace from './components/KgGeneratorWorkspace';
 import SavedPromptsWorkspace from './components/SavedPromptsWorkspace';
-import SmartSummariserWorkspace from './components/SmartSummariserWorkspace';
 import ConceptExplainerWorkspace from './components/ConceptExplainerWorkspace';
+import FlashcardGeneratorWorkspace from './components/FlashcardGeneratorWorkspace';
+import ExamPredictorWorkspace from './components/ExamPredictorWorkspace';
 import SettingsWorkspace from './components/SettingsWorkspace';
 
-export type ViewState = 'home' | 'ingest' | 'stored-kb' | 'tools' | 'kg-generator' | 'saved-prompts' | 'smart-summariser' | 'concept-explainer' | 'settings';
+export type ViewState = 'home' | 'ingest' | 'stored-kb' | 'tools' | 'kg-generator' | 'saved-prompts' | 'smart-summariser' | 'concept-explainer' | 'flashcard-generator' | 'exam-predictor' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -59,6 +60,10 @@ function App() {
         return <SmartSummariserWorkspace onNavigate={(v) => setCurrentView(v as ViewState)} />;
       case 'concept-explainer':
         return <ConceptExplainerWorkspace onNavigate={(v) => setCurrentView(v as ViewState)} />;
+      case 'flashcard-generator':
+        return <FlashcardGeneratorWorkspace onNavigate={(v) => setCurrentView(v as ViewState)} />;
+      case 'exam-predictor':
+        return <ExamPredictorWorkspace onNavigate={(v) => setCurrentView(v as ViewState)} />;
       case 'settings':
         return <SettingsWorkspace isDarkMode={isDarkMode} toggleTheme={toggleTheme} onNavigate={(v) => setCurrentView(v as ViewState)} />;
       default:

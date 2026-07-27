@@ -82,7 +82,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ onNavigate }) => {
             description: f.description,
             type: 'folder',
             dateAdded: new Date(f.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-            itemCount: 0 // Ideally this would come from a backend aggregation
+            itemCount: f.itemCount ?? 0
           });
         });
       }

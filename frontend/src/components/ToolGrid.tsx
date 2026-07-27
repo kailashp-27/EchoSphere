@@ -38,9 +38,10 @@ const ToolGrid: React.FC<ToolGridProps> = ({ onNavigate }) => {
       title: 'Flashcard Generator',
       description: 'Automatically generate Anki-style flashcards from your text.',
       icon: Layers,
-      tag: 'RAG',
+      tag: 'AI',
       color: 'text-purple-500 dark:text-purple-400',
-      bg: 'bg-purple-100 dark:bg-purple-400/10'
+      bg: 'bg-purple-100 dark:bg-purple-400/10',
+      actionId: 'flashcard-generator'
     },
     {
       title: 'Concept Explainer',
@@ -55,9 +56,10 @@ const ToolGrid: React.FC<ToolGridProps> = ({ onNavigate }) => {
       title: 'Exam Predictor',
       description: 'Generate potential exam questions from your knowledge base.',
       icon: LineChart,
-      tag: 'RAG',
+      tag: 'AI',
       color: 'text-rose-500 dark:text-rose-400',
-      bg: 'bg-rose-100 dark:bg-rose-400/10'
+      bg: 'bg-rose-100 dark:bg-rose-400/10',
+      actionId: 'exam-predictor'
     },
     {
       title: 'Saved Prompts',

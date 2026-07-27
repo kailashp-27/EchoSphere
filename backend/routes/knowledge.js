@@ -3,6 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 const Folder = require('../models/Folder');
 const Document = require('../models/Document');
 const Note = require('../models/Note');
@@ -58,7 +60,22 @@ router.get('/folders', async (req, res) => {
     // Get notes inside this parent
     const notes = await Note.find({ folderId: parentId }).sort({ createdAt: -1 });
 
-    res.json({ folders, documents, notes });
+    // Compute item counts for each folder in parallel
+    const foldersWithCounts = await Promise.all(
+      folders.map(async (folder) => {
+        const [docCount, noteCount, subFolderCount] = await Promise.all([
+          Document.countDocuments({ folderId: folder._id }),
+          Note.countDocuments({ folderId: folder._id }),
+          Folder.countDocuments({ parentFolderId: folder._id }),
+        ]);
+        return {
+          ...folder.toObject(),
+          itemCount: docCount + noteCount + subFolderCount,
+        };
+      })
+    );
+
+    res.json({ folders: foldersWithCounts, documents, notes });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error fetching folders' });
@@ -283,6 +300,99 @@ router.get('/all-files', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch all files' });
   }
 });
+// POST /api/knowledge/web-clip - Scrape a URL and save as a Note
+router.post('/web-clip', async (req, res) => {
+  try {
+    const { url, folderId, folderName } = req.body;
+
+    if (!url || !url.trim()) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    // Validate URL format
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        throw new Error('Invalid protocol');
+      }
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL. Must start with http:// or https://' });
+    }
+
+    // Fetch the page with a browser-like User-Agent
+    let html;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; EchoSphere/1.0; +https://echosphere.app)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout: 15000,
+      });
+      if (!response.ok) {
+        return res.status(502).json({ error: `Failed to fetch page: HTTP ${response.status}` });
+      }
+      html = await response.text();
+    } catch (fetchErr) {
+      if (fetchErr.type === 'request-timeout') {
+        return res.status(504).json({ error: 'Request timed out. The page took too long to respond.' });
+      }
+      return res.status(502).json({ error: `Could not reach URL: ${fetchErr.message}` });
+    }
+
+    // Parse HTML with cheerio
+    const $ = cheerio.load(html);
+
+    // Remove non-content elements
+    $('script, style, nav, footer, header, iframe, noscript, form, aside, [role="navigation"], [role="banner"], [role="complementary"]').remove();
+
+    // Extract title
+    const title = $('meta[property="og:title"]').attr('content') ||
+                  $('title').text() ||
+                  parsedUrl.hostname;
+
+    // Extract main content text — prefer article/main, fall back to body
+    const contentEl = $('article').length ? $('article') :
+                      $('main').length ? $('main') :
+                      $('[role="main"]').length ? $('[role="main"]') :
+                      $('body');
+
+    // Extract paragraphs and headings
+    const textParts = [];
+    contentEl.find('h1, h2, h3, h4, p, li').each((_, el) => {
+      const tag = $(el).prop('tagName').toLowerCase();
+      const text = $(el).text().replace(/\s+/g, ' ').trim();
+      if (text.length < 20) return; // skip very short/empty fragments
+      if (tag === 'h1') textParts.push(`# ${text}`);
+      else if (tag === 'h2') textParts.push(`## ${text}`);
+      else if (tag === 'h3' || tag === 'h4') textParts.push(`### ${text}`);
+      else textParts.push(text);
+    });
+
+    const content = `Clipped from: ${url}\n\n${textParts.join('\n\n')}`;
+
+    if (textParts.length === 0) {
+      return res.status(422).json({ error: 'Could not extract readable content from this page.' });
+    }
+
+    // Save as a Note
+    const note = new Note({
+      title: title.trim().slice(0, 200),
+      content,
+      folderId: folderId || null,
+      folderName: folderName || null,
+      vectorStatus: 'pending',
+    });
+
+    await note.save();
+    res.status(201).json({ note, message: 'Web page clipped and saved successfully.' });
+  } catch (err) {
+    console.error('Web clip error:', err);
+    res.status(500).json({ error: 'Failed to clip web page. Please try again.' });
+  }
+});
+
 // DELETE /api/knowledge/clear-all - Wipe all knowledge base data
 router.delete('/clear-all', async (req, res) => {
   try {

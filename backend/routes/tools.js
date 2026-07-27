@@ -107,4 +107,135 @@ router.post('/explain', async (req, res) => {
   }
 });
 
+// POST /api/tools/flashcards
+router.post('/flashcards', async (req, res) => {
+  try {
+    const { documentId, count = 10, difficulty = 'mixed' } = req.body;
+    if (!documentId) return res.status(400).json({ error: 'documentId is required' });
+
+    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
+    }
+
+    const textContent = await extractTextFromDocument(documentId);
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    let difficultyInstruction = 'Mix easy recall, conceptual understanding, and applied questions.';
+    if (difficulty === 'easy') difficultyInstruction = 'Focus on basic definitions, key terms, and simple recall questions.';
+    if (difficulty === 'hard') difficultyInstruction = 'Focus on deep conceptual questions, comparisons, and application of knowledge.';
+
+    const prompt = `You are an expert educator creating study flashcards. Based on the text below, generate exactly ${count} high-quality flashcards.
+
+${difficultyInstruction}
+
+Rules:
+- Each flashcard must have a FRONT (a clear, specific question) and BACK (a concise, accurate answer).
+- Fronts should be genuine questions, not just fill-in-the-blank or definitions only.
+- Backs should be thorough but concise (1-3 sentences max).
+- Cover the most important topics in the text.
+- Return ONLY a valid JSON array — no markdown, no commentary.
+
+Format:
+[
+  { "front": "Question here?", "back": "Answer here." },
+  ...
+]
+
+Text:
+${textContent.substring(0, 50000)}`;
+
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text().trim();
+
+    // Strip any markdown code fences if present
+    const jsonStr = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    let flashcards;
+    try {
+      flashcards = JSON.parse(jsonStr);
+      if (!Array.isArray(flashcards)) throw new Error('Not an array');
+    } catch {
+      return res.status(500).json({ error: 'AI returned an unexpected format. Please try again.' });
+    }
+
+    res.json({ flashcards });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Failed to generate flashcards' });
+  }
+});
+
+// POST /api/tools/exam-predictor
+router.post('/exam-predictor', async (req, res) => {
+  try {
+    const { documentId, count = 5, difficulty = 'medium', type = 'mixed' } = req.body;
+    if (!documentId) return res.status(400).json({ error: 'documentId is required' });
+
+    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
+    }
+
+    const textContent = await extractTextFromDocument(documentId);
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    let difficultyInstruction = 'Create questions of moderate difficulty, suitable for a mid-term exam.';
+    if (difficulty === 'easy') difficultyInstruction = 'Create basic recall questions, suitable for a quiz.';
+    if (difficulty === 'hard') difficultyInstruction = 'Create challenging, analytical, and conceptual questions, suitable for a final exam.';
+
+    let typeInstruction = 'Mix multiple-choice and short-answer questions.';
+    if (type === 'mcq') typeInstruction = 'Create ONLY multiple-choice questions (with 4 options).';
+    if (type === 'short-answer') typeInstruction = 'Create ONLY short-answer questions.';
+    if (type === 'essay') typeInstruction = 'Create ONLY essay-type questions that require detailed explanations.';
+
+    const prompt = `You are an expert professor creating an exam based on the text below. Generate exactly ${count} high-quality exam questions.
+
+${difficultyInstruction}
+${typeInstruction}
+
+Rules:
+- Generate questions that test true understanding, not just trivial facts.
+- Return ONLY a valid JSON array — no markdown, no commentary.
+
+Format:
+[
+  { 
+    "question": "Question text here", 
+    "type": "mcq | short-answer | essay",
+    "options": ["Option A", "Option B", "Option C", "Option D"], // ONLY include options if type is mcq
+    "answer": "Correct answer text (or correct option for mcq)", 
+    "explanation": "Brief explanation of why the answer is correct." 
+  },
+  ...
+]
+
+Text:
+${textContent.substring(0, 50000)}`;
+
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text().trim();
+
+    // Strip any markdown code fences if present
+    const jsonStr = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    let questions;
+    try {
+      questions = JSON.parse(jsonStr);
+      if (!Array.isArray(questions)) throw new Error('Not an array');
+    } catch {
+      return res.status(500).json({ error: 'AI returned an unexpected format. Please try again.' });
+    }
+
+    res.json({ questions });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Failed to generate exam questions' });
+  }
+});
+
 module.exports = router;
