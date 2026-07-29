@@ -37,15 +37,13 @@ const SmartSummariserWorkspace: React.FC<SmartSummariserWorkspaceProps> = ({ onN
     setIsGenerating(true);
     
     const startTime = Date.now();
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
-    const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+    const llmModel = localStorage.getItem('ollama_model') || 'llama3.2:1b';
 
     try {
       const res = await fetch('http://localhost:5000/api/tools/summarize', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
           'x-model-name': llmModel
         },
         body: JSON.stringify({ documentId: selectedFile, length: summaryLength })

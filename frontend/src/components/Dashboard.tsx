@@ -6,8 +6,6 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
-  const [saved, setSaved] = useState(false);
   const [recentFiles, setRecentFiles] = useState<{_id: string, name: string, type: string}[]>([]);
 
   useEffect(() => {
@@ -21,20 +19,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       .catch(err => console.error('Failed to fetch recent files', err));
   }, []);
 
-  useEffect(() => {
-    // If it's already provided by the .env, we don't necessarily need to overwrite it with localStorage 
-    // unless localStorage has a user-provided override.
-    const stored = localStorage.getItem('gemini_api_key');
-    if (stored && !import.meta.env.VITE_GEMINI_API_KEY) {
-      setApiKey(stored);
-    }
-  }, []);
 
-  const handleSaveKey = () => {
-    localStorage.setItem('gemini_api_key', apiKey);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
 
   const quickActions = [
     { label: 'New Note', icon: FileText, color: 'text-emerald-500 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-400/10', actionId: 'ingest' },
@@ -49,31 +34,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <p className="text-neutral-500 dark:text-neutral-400">Your AI-powered study environment is ready.</p>
       </header>
 
-      {/* API Key Setup */}
-      <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1 flex items-center gap-2">
-          <KeyRound className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-          API Configuration
-        </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">Set your Gemini API key to enable AI features.</p>
-        
-        <div className="flex gap-3">
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="AIzaSy..."
-            className="flex-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-mono placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
-          />
-          <button
-            onClick={handleSaveKey}
-            className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
-          >
-            {saved && <Check className="w-4 h-4" />}
-            {saved ? 'Saved' : 'Save Key'}
-          </button>
-        </div>
-      </section>
+
 
       {/* Quick Actions */}
       <section>

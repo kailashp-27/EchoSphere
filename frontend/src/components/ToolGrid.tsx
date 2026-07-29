@@ -6,7 +6,8 @@ import {
   Edit3, 
   LineChart, 
   Bookmark,
-  Network
+  Network,
+  TrendingUp
 } from 'lucide-react';
 
 interface ToolGridProps {
@@ -69,6 +70,15 @@ const ToolGrid: React.FC<ToolGridProps> = ({ onNavigate }) => {
       color: 'text-neutral-500 dark:text-neutral-400',
       bg: 'bg-neutral-200 dark:bg-neutral-600/10',
       actionId: 'saved-prompts'
+    },
+    {
+      title: 'Performance Prediction',
+      description: 'Predict student performance based on learning patterns and metrics.',
+      icon: TrendingUp,
+      tag: 'AI',
+      color: 'text-cyan-500 dark:text-cyan-400',
+      bg: 'bg-cyan-100 dark:bg-cyan-400/10',
+      actionId: 'performance-prediction'
     }
   ];
 

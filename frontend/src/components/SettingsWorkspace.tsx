@@ -111,22 +111,36 @@ const ConfirmModal: React.FC<{
 // Main SettingsWorkspace Component
 // ------------------------------------------------------------------
 const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({ isDarkMode, toggleTheme }) => {
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
-  const [llmModel, setLlmModel] = useState('gemini-1.5-flash');
+  const [llmModel, setLlmModel] = useState('llama3.2:1b');
+  const [availableModels, setAvailableModels] = useState<{value: string, label: string}[]>([]);
   const [saved, setSaved] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('gemini_api_key');
-    if (stored && !import.meta.env.VITE_GEMINI_API_KEY) {
-      setApiKey(stored);
-    }
-    const storedModel = localStorage.getItem('gemini_model');
+    const storedModel = localStorage.getItem('ollama_model') || localStorage.getItem('gemini_model');
     if (storedModel) {
       setLlmModel(storedModel);
     }
+
+    fetch('http://localhost:11434/api/tags')
+      .then(res => res.json())
+      .then(data => {
+        if (data.models && data.models.length > 0) {
+          const models = data.models.map((m: any) => ({
+            value: m.name,
+            label: m.name
+          }));
+          setAvailableModels(models);
+        } else {
+          setAvailableModels([{ value: 'llama3.2:1b', label: 'No models found locally' }]);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch Ollama models:", err);
+        setAvailableModels([{ value: 'llama3.2:1b', label: 'Cannot connect to Ollama' }]);
+      });
   }, []);
 
   const showToast = useCallback((message: string, type: ToastType) => {
@@ -135,9 +149,8 @@ const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({ isDarkMode, toggl
 
   const dismissToast = useCallback(() => setToast(null), []);
 
-  const handleSaveKey = () => {
-    localStorage.setItem('gemini_api_key', apiKey);
-    localStorage.setItem('gemini_model', llmModel);
+  const handleSaveConfig = () => {
+    localStorage.setItem('ollama_model', llmModel);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -181,20 +194,10 @@ const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({ isDarkMode, toggl
               API Configuration
             </h3>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
-              Set your Gemini API key to enable AI features across the application. Your key is stored securely in your browser's local storage.
+              Select your local Ollama model to power AI features. Make sure Ollama is running on your machine.
             </p>
             
             <div className="flex flex-col gap-4 max-w-2xl">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">API Key</label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="flex-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-mono placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
-                />
-              </div>
               
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
@@ -205,17 +208,13 @@ const SettingsWorkspace: React.FC<SettingsWorkspaceProps> = ({ isDarkMode, toggl
                   onChange={setLlmModel}
                   placeholder="Choose AI model"
                   icon={<Cpu className="w-4 h-4" />}
-                  options={[
-                    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash — Fast & Efficient' },
-                    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro — Advanced Reasoning' },
-                    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview — Latest' },
-                  ]}
+                  options={availableModels}
                 />
               </div>
 
               <div className="pt-2">
                 <button
-                  onClick={handleSaveKey}
+                  onClick={handleSaveConfig}
                   className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 w-fit"
                 >
                   {saved && <Check className="w-4 h-4" />}

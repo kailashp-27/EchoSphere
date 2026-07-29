@@ -47,15 +47,13 @@ const FlashcardGeneratorWorkspace: React.FC<FlashcardGeneratorWorkspaceProps> = 
     setMastered(new Set());
     setIsGenerating(true);
     const startTime = Date.now();
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
-    const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+    const llmModel = localStorage.getItem('ollama_model') || 'llama3.2:1b';
 
     try {
       const res = await fetch('http://localhost:5000/api/tools/flashcards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
           'x-model-name': llmModel,
         },
         body: JSON.stringify({ documentId: selectedFile, count: parseInt(cardCount), difficulty }),

@@ -61,8 +61,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
     setInputValue('');
     setIsThinking(true);
 
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
-    const llmModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+    const llmModel = localStorage.getItem('ollama_model') || 'llama3.2:1b';
 
     try {
       // Build history from all messages except the initial greeting and the new user message
@@ -75,7 +74,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentView, onNavigate
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
           'x-model-name': llmModel
         },
         body: JSON.stringify({

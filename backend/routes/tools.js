@@ -4,7 +4,26 @@ const fs = require('fs');
 const path = require('path');
 const Note = require('../models/Note');
 const Document = require('../models/Document');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+async function callOllama(prompt, modelName, format = null) {
+  const body = {
+    model: modelName,
+    prompt: prompt,
+    stream: false
+  };
+  if (format) {
+    body.format = format;
+  }
+  const response = await fetch('http://localhost:11434/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new Error(`Ollama API error: ${response.statusText}`);
+  }
+  const data = await response.json();
+  return data.response;
+}
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 
@@ -49,15 +68,8 @@ router.post('/summarize', async (req, res) => {
     const { documentId, length = 'medium' } = req.body;
     if (!documentId) return res.status(400).json({ error: 'documentId is required' });
 
-    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
-    }
-
     const textContent = await extractTextFromDocument(documentId);
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
 
     let lengthInstruction = 'a medium-length, comprehensive summary';
     if (length === 'short') lengthInstruction = 'a very brief, concise bullet-point summary';
@@ -65,8 +77,7 @@ router.post('/summarize', async (req, res) => {
 
     const prompt = `You are an expert summarizer. Please provide ${lengthInstruction} of the following text:\n\n${textContent.substring(0, 50000)}`;
     
-    const result = await model.generateContent(prompt);
-    const summary = result.response.text();
+    const summary = await callOllama(prompt, modelName);
 
     res.json({ result: summary });
   } catch (err) {
@@ -81,15 +92,8 @@ router.post('/explain', async (req, res) => {
     const { documentId, depth = 'beginner' } = req.body;
     if (!documentId) return res.status(400).json({ error: 'documentId is required' });
 
-    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
-    }
-
     const textContent = await extractTextFromDocument(documentId);
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
 
     let depthInstruction = 'Explain the core concepts simply, as if to a beginner.';
     if (depth === 'feynman') depthInstruction = 'Use the Feynman Technique: explain it as if teaching a child, using simple analogies and removing all jargon.';
@@ -97,8 +101,7 @@ router.post('/explain', async (req, res) => {
 
     const prompt = `You are an expert tutor. Analyze the following text and explain its main concepts.\n${depthInstruction}\n\nText:\n${textContent.substring(0, 50000)}`;
     
-    const result = await model.generateContent(prompt);
-    const explanation = result.response.text();
+    const explanation = await callOllama(prompt, modelName);
 
     res.json({ result: explanation });
   } catch (err) {
@@ -113,15 +116,8 @@ router.post('/flashcards', async (req, res) => {
     const { documentId, count = 10, difficulty = 'mixed' } = req.body;
     if (!documentId) return res.status(400).json({ error: 'documentId is required' });
 
-    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
-    }
-
     const textContent = await extractTextFromDocument(documentId);
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
 
     let difficultyInstruction = 'Mix easy recall, conceptual understanding, and applied questions.';
     if (difficulty === 'easy') difficultyInstruction = 'Focus on basic definitions, key terms, and simple recall questions.';
@@ -147,16 +143,28 @@ Format:
 Text:
 ${textContent.substring(0, 50000)}`;
 
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+    const raw = await callOllama(prompt, modelName, "json");
 
     // Strip any markdown code fences if present
     const jsonStr = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
 
     let flashcards;
     try {
-      flashcards = JSON.parse(jsonStr);
-      if (!Array.isArray(flashcards)) throw new Error('Not an array');
+      let parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed)) {
+        flashcards = parsed;
+      } else if (parsed.flashcards && Array.isArray(parsed.flashcards)) {
+        flashcards = parsed.flashcards;
+      } else if (parsed.front && parsed.back) {
+        flashcards = [parsed];
+      } else {
+        const vals = Object.values(parsed);
+        if (vals.length > 0 && vals[0].front && vals[0].back) {
+          flashcards = vals;
+        } else {
+          throw new Error('Not an array');
+        }
+      }
     } catch {
       return res.status(500).json({ error: 'AI returned an unexpected format. Please try again.' });
     }
@@ -174,15 +182,8 @@ router.post('/exam-predictor', async (req, res) => {
     const { documentId, count = 5, difficulty = 'medium', type = 'mixed' } = req.body;
     if (!documentId) return res.status(400).json({ error: 'documentId is required' });
 
-    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
-    }
-
     const textContent = await extractTextFromDocument(documentId);
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
 
     let difficultyInstruction = 'Create questions of moderate difficulty, suitable for a mid-term exam.';
     if (difficulty === 'easy') difficultyInstruction = 'Create basic recall questions, suitable for a quiz.';
@@ -217,16 +218,28 @@ Format:
 Text:
 ${textContent.substring(0, 50000)}`;
 
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+    const raw = await callOllama(prompt, modelName, "json");
 
     // Strip any markdown code fences if present
     const jsonStr = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
 
     let questions;
     try {
-      questions = JSON.parse(jsonStr);
-      if (!Array.isArray(questions)) throw new Error('Not an array');
+      let parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed)) {
+        questions = parsed;
+      } else if (parsed.questions && Array.isArray(parsed.questions)) {
+        questions = parsed.questions;
+      } else if (parsed.question && parsed.type) {
+        questions = [parsed];
+      } else {
+        const vals = Object.values(parsed);
+        if (vals.length > 0 && vals[0].question) {
+          questions = vals;
+        } else {
+          throw new Error('Not an array');
+        }
+      }
     } catch {
       return res.status(500).json({ error: 'AI returned an unexpected format. Please try again.' });
     }

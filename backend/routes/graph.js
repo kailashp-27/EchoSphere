@@ -5,7 +5,26 @@ const path = require('path');
 const Graph = require('../models/Graph');
 const Note = require('../models/Note');
 const Document = require('../models/Document');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+async function callOllama(prompt, modelName, format = null) {
+  const body = {
+    model: modelName,
+    prompt: prompt,
+    stream: false
+  };
+  if (format) {
+    body.format = format;
+  }
+  const response = await fetch('http://localhost:11434/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new Error(`Ollama API error: ${response.statusText}`);
+  }
+  const data = await response.json();
+  return data.response;
+}
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 //const pdfParse = require('pdf-parse/lib/pdf-parse.js');
@@ -86,25 +105,22 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'No text extracted from document' });
     }
 
-    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
-    const modelName = req.headers['x-model-name'] || 'gemini-3-flash-preview';
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
     
-    // UPDATED: Use the selected model and enforce strict JSON output
-    const model = genAI.getGenerativeModel({ 
-        model: modelName,
-        generationConfig: {
-            responseMimeType: "application/json",
-        }
-    });
-
     const prompt = `${SYSTEM_PROMPT}\n\n### Input Educational Document:\n${textContent.substring(0, 30000)}`;
     
-    const result = await model.generateContent(prompt);
-    const output = result.response.text();
+    const output = await callOllama(prompt, modelName, "json");
+    const jsonStr = output.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
     
-    // Because of responseMimeType, we can safely parse directly
-    const parsedData = JSON.parse(output);
+    let parsedData;
+    try {
+      parsedData = JSON.parse(jsonStr);
+      if (!parsedData.nodes || !parsedData.edges) {
+        throw new Error('Missing nodes or edges');
+      }
+    } catch (e) {
+      return res.status(500).json({ error: 'AI returned an unexpected format. Please try again.' });
+    }
     
     // Transform LLM output to match our front/back link schemas
     const convertedData = {

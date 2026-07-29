@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Note = require('../models/Note');
 const Document = require('../models/Document');
 
@@ -22,11 +21,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    const apiKey = req.headers['x-api-key'] || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(401).json({ error: 'API key is required. Please set it in the Dashboard.' });
-    }
-
     // Build knowledge context from all files (Option A: titles only)
     const documents = await Document.find().sort({ createdAt: -1 }).select('title type');
     const notes = await Note.find().sort({ createdAt: -1 }).select('title');
@@ -40,10 +34,7 @@ router.post('/', async (req, res) => {
       ? `The user's knowledge base contains the following documents:\n${fileList.join('\n')}`
       : 'The user has no documents stored in their knowledge base yet.';
 
-    // Build conversation for Gemini
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = req.headers['x-model-name'] || 'gemini-1.5-flash';
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
 
     // Build the full prompt with system instructions, context, history, and latest message
     let conversationPrompt = `${SYSTEM_PROMPT}\n\n### Knowledge Base Context:\n${contextBlock}\n\n### Conversation:\n`;
@@ -60,8 +51,22 @@ router.post('/', async (req, res) => {
 
     conversationPrompt += `User: ${message}\nAssistant:`;
 
-    const result = await model.generateContent(conversationPrompt);
-    const reply = result.response.text();
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelName,
+        prompt: conversationPrompt,
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const reply = data.response;
 
     res.json({ reply });
   } catch (err) {
