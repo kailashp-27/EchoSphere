@@ -72,3 +72,15 @@ To objectively evaluate Echosphere's success and operational efficiency, the fol
 *   **User Technical Literacy:** It is assumed that target users possess a baseline understanding of digital file management (uploading/organizing files) and are comfortable interacting with conversational AI interfaces.
 *   **API Key Provision:** It is assumed that users will provide their own valid LLM API keys (e.g., Gemini) to power the application, shifting the API cost burden to the user in a localized deployment model.
 *   **Data Privacy Acceptance:** Users are willing to upload their personal, potentially sensitive study materials to the database with the understanding that the text will be processed via external LLM APIs for the purpose of generating responses.
+
+## 🌿 Branching Strategy (GitHub Flow)
+
+For EchoSphere, we strictly adhere to the **GitHub Flow** branching strategy to maintain a clean, organized, and stable repository during development.
+
+1. **`main` Branch:** This is the primary, production-ready branch. All code in `main` is stable and functional. Direct commits to `main` are avoided to prevent breaking the core application.
+2. **Feature Branches:** For every new module (e.g., Knowledge Graph, Concept Explainer), a dedicated branch is created from `main`. We use descriptive naming conventions such as:
+   * `feature/pdf-ingestion`
+   * `feature/knowledge-graph-ui`
+   * `bugfix/gemini-api-key-error`
+3. **Pull Requests (PRs):** Once a feature is complete locally, a Pull Request is opened against the `main` branch. This allows for code review and automated checks before integration.
+4. **Merge & Delete:** After a successful review and merge into `main`, the feature branch is deleted to keep the repository uncluttered.
