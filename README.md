@@ -84,3 +84,27 @@ For EchoSphere, we strictly adhere to the **GitHub Flow** branching strategy to 
    * `bugfix/gemini-api-key-error`
 3. **Pull Requests (PRs):** Once a feature is complete locally, a Pull Request is opened against the `main` branch. This allows for code review and automated checks before integration.
 4. **Merge & Delete:** After a successful review and merge into `main`, the feature branch is deleted to keep the repository uncluttered.
+
+## 🚀 Quick Start – Local Development
+
+EchoSphere is fully containerized using Docker to ensure a seamless local development experience. You do not need to install MongoDB or Node.js locally on your host machine.
+
+### Prerequisites
+* [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running.
+
+### Running the Application
+1. Clone the repository and navigate to the root directory:
+   ```bash
+   git clone https://github.com/yourusername/EchoSphere.git
+   cd EchoSphere
+   ```
+
+2. Build and spin up the containers using Docker Compose:
+   ```bash
+   docker-compose up --build
+   ```
+
+3. Access the application:
+   * **Frontend UI:** Open your browser and navigate to http://localhost:5173
+   * **Backend API:** Running on http://localhost:5000
+   * **MongoDB:** Running locally on port 27017
