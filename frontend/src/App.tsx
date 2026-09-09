@@ -9,6 +9,7 @@ import SavedPromptsWorkspace from './components/SavedPromptsWorkspace';
 import ConceptExplainerWorkspace from './components/ConceptExplainerWorkspace';
 import FlashcardGeneratorWorkspace from './components/FlashcardGeneratorWorkspace';
 import ExamPredictorWorkspace from './components/ExamPredictorWorkspace';
+import SmartSummariserWorkspace from './components/SmartSummariserWorkspace';
 import SettingsWorkspace from './components/SettingsWorkspace';
 
 export type ViewState = 'home' | 'ingest' | 'stored-kb' | 'tools' | 'kg-generator' | 'saved-prompts' | 'smart-summariser' | 'concept-explainer' | 'flashcard-generator' | 'exam-predictor' | 'settings';

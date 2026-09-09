@@ -89,18 +89,24 @@ router.post('/summarize', async (req, res) => {
 // POST /api/tools/explain
 router.post('/explain', async (req, res) => {
   try {
-    const { documentId, depth = 'beginner' } = req.body;
-    if (!documentId) return res.status(400).json({ error: 'documentId is required' });
+    const { documentId, topic, depth = 'beginner' } = req.body;
+    if (!documentId && !topic) return res.status(400).json({ error: 'Either documentId or topic is required' });
 
-    const textContent = await extractTextFromDocument(documentId);
     const modelName = req.headers['x-model-name'] || 'llama3.2:1b';
 
     let depthInstruction = 'Explain the core concepts simply, as if to a beginner.';
     if (depth === 'feynman') depthInstruction = 'Use the Feynman Technique: explain it as if teaching a child, using simple analogies and removing all jargon.';
     if (depth === 'expert') depthInstruction = 'Provide an advanced, high-level technical breakdown assuming the reader is already a domain expert.';
 
-    const prompt = `You are an expert tutor. Analyze the following text and explain its main concepts.\n${depthInstruction}\n\nText:\n${textContent.substring(0, 50000)}`;
-    
+    let prompt;
+    if (topic && !documentId) {
+      // Free-text topic explanation
+      prompt = `You are an expert tutor. Explain the following topic in a clear, structured way.\n${depthInstruction}\n\nTopic: ${topic}\n\nProvide a thorough explanation with examples where helpful.`;
+    } else {
+      const textContent = await extractTextFromDocument(documentId);
+      prompt = `You are an expert tutor. Analyze the following text and explain its main concepts.\n${depthInstruction}\n\nText:\n${textContent.substring(0, 50000)}`;
+    }
+
     const explanation = await callOllama(prompt, modelName);
 
     res.json({ result: explanation });
@@ -109,6 +115,7 @@ router.post('/explain', async (req, res) => {
     res.status(500).json({ error: err.message || 'Failed to explain concept' });
   }
 });
+
 
 // POST /api/tools/flashcards
 router.post('/flashcards', async (req, res) => {
