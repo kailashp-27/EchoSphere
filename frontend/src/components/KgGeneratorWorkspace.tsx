@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Network, FileText, ArrowLeft, Save, Loader2, Zap, BrainCircuit, AlertCircle, RotateCw } from 'lucide-react';
-import { ForceGraph2D } from 'react-force-graph';
+import ForceGraph2D from 'react-force-graph-2d';
 
 interface FileOption { _id: string; name: string; type: string; }
 interface Node { id: string; label: string; val: number; }
