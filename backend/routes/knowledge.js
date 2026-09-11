@@ -5,11 +5,14 @@ const path = require('path');
 const fs = require('fs');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
 const Folder = require('../models/Folder');
 const Document = require('../models/Document');
 const Note = require('../models/Note');
 const Graph = require('../models/Graph');
 const SavedPrompt = require('../models/SavedPrompt');
+const { ingestDocument, deleteDocumentChunks } = require('../rag');
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads');
@@ -167,18 +170,43 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       fileUrl: `/uploads/${req.file.filename}`,
       folderId: folderId || null,
       folderName: folderName || null,
-      vectorStatus: 'pending' // placeholder for vector search embedding
+      vectorStatus: 'pending',
     });
 
     await document.save();
+    // Respond immediately — ingestion runs in background
     res.status(201).json(document);
+
+    // ── Background RAG ingestion ──────────────────────────────────────
+    setImmediate(async () => {
+      try {
+        const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+        let textContent = '';
+        if (type === 'pdf') {
+          const buf = fs.readFileSync(filePath);
+          const parsed = await pdfParse(buf);
+          textContent = parsed.text;
+        } else if (type === 'docx') {
+          const result = await mammoth.extractRawText({ path: filePath });
+          textContent = result.value;
+        }
+        if (textContent.trim()) {
+          await ingestDocument(textContent, String(document._id), type);
+          await Document.findByIdAndUpdate(document._id, { vectorStatus: 'completed' });
+        } else {
+          await Document.findByIdAndUpdate(document._id, { vectorStatus: 'skipped' });
+        }
+      } catch (ingErr) {
+        console.error('[RAG] Background ingestion failed for', document._id, ingErr.message);
+        await Document.findByIdAndUpdate(document._id, { vectorStatus: 'error' });
+      }
+    });
   } catch (err) {
     console.error(err);
-    // Cleanup the uploaded file if document creation fails
     if (req.file && req.file.path) {
-      fs.unlinkSync(req.file.path);
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
-    if (err.message.includes('Unsupported file type')) {
+    if (err.message && err.message.includes('Unsupported file type')) {
       return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: 'Failed to upload document' });
@@ -203,11 +231,22 @@ router.post('/note', async (req, res) => {
       content: content || '',
       folderId: folderId || null,
       folderName: folderName || null,
-      vectorStatus: 'pending'
+      vectorStatus: 'pending',
     });
 
     await note.save();
     res.status(201).json(note);
+
+    // ── Background RAG ingestion ──────────────────────────────────────
+    setImmediate(async () => {
+      try {
+        await ingestDocument(content, String(note._id), 'note');
+        await Note.findByIdAndUpdate(note._id, { vectorStatus: 'completed' });
+      } catch (ingErr) {
+        console.error('[RAG] Note ingestion failed for', note._id, ingErr.message);
+        await Note.findByIdAndUpdate(note._id, { vectorStatus: 'error' });
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to save note' });
@@ -246,8 +285,12 @@ router.get('/download/:id', async (req, res) => {
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'File not found on disk' });
     }
-    
-    res.download(filePath, doc.title);
+
+    // Send inline so browsers (and iframes) can render PDFs directly
+    const mimeType = doc.type === 'pdf' ? 'application/pdf' : 'application/octet-stream';
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.title)}"`);
+    res.sendFile(filePath);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to download file' });
@@ -257,24 +300,29 @@ router.get('/download/:id', async (req, res) => {
 // DELETE /api/knowledge/:id - Delete Document or Note
 router.delete('/:id', async (req, res) => {
   try {
+    const id = req.params.id;
+
     // Try to find in Document first
-    let doc = await Document.findById(req.params.id);
+    let doc = await Document.findById(id);
     if (doc) {
       if (doc.fileUrl) {
         const filename = doc.fileUrl.split('/uploads/')[1];
         const filePath = path.join(uploadDir, filename);
         if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+          try { fs.unlinkSync(filePath); } catch (_) {}
         }
       }
-      await Document.findByIdAndDelete(req.params.id);
+      await Document.findByIdAndDelete(id);
+      // Remove RAG chunks from LanceDB
+      await deleteDocumentChunks(id);
       return res.json({ message: 'Document deleted successfully' });
     }
 
     // Try Note if not found in Document
-    let note = await Note.findById(req.params.id);
+    let note = await Note.findById(id);
     if (note) {
-      await Note.findByIdAndDelete(req.params.id);
+      await Note.findByIdAndDelete(id);
+      await deleteDocumentChunks(id);
       return res.json({ message: 'Note deleted successfully' });
     }
 
@@ -387,6 +435,17 @@ router.post('/web-clip', async (req, res) => {
 
     await note.save();
     res.status(201).json({ note, message: 'Web page clipped and saved successfully.' });
+
+    // ── Background RAG ingestion ──────────────────────────────────────
+    setImmediate(async () => {
+      try {
+        await ingestDocument(content, String(note._id), 'url');
+        await Note.findByIdAndUpdate(note._id, { vectorStatus: 'completed' });
+      } catch (ingErr) {
+        console.error('[RAG] Web clip ingestion failed:', ingErr.message);
+        await Note.findByIdAndUpdate(note._id, { vectorStatus: 'error' });
+      }
+    });
   } catch (err) {
     console.error('Web clip error:', err);
     res.status(500).json({ error: 'Failed to clip web page. Please try again.' });
@@ -407,9 +466,15 @@ router.delete('/clear-all', async (req, res) => {
       const files = fs.readdirSync(uploadDir);
       for (const file of files) {
         if (file !== '.gitkeep') {
-          fs.unlinkSync(path.join(uploadDir, file));
+          try { fs.unlinkSync(path.join(uploadDir, file)); } catch (_) {}
         }
       }
+    }
+
+    // Clear the LanceDB vector store folder entirely
+    const lanceDbPath = require('path').join(__dirname, '..', 'lancedb_store');
+    if (fs.existsSync(lanceDbPath)) {
+      fs.rmSync(lanceDbPath, { recursive: true, force: true });
     }
     
     res.json({ message: 'All data cleared successfully' });

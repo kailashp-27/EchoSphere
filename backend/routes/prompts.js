@@ -16,13 +16,13 @@ router.get('/', async (req, res) => {
 // POST /api/prompts - Create a new saved prompt
 router.post('/', async (req, res) => {
   try {
-    const { title, prompt } = req.body;
+    const { title, prompt, category } = req.body;
     
     if (!title || !prompt) {
       return res.status(400).json({ error: 'title and prompt are required' });
     }
 
-    const newPrompt = new SavedPrompt({ title, prompt });
+    const newPrompt = new SavedPrompt({ title, prompt, category });
     await newPrompt.save();
 
     res.status(201).json(newPrompt);

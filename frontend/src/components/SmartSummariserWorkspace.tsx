@@ -4,6 +4,7 @@ import {
   BrainCircuit, Download, BookOpen, Tag, ChevronLeft, ChevronRight,
   Loader2, AlertCircle, BookMarked
 } from 'lucide-react';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface SmartSummariserWorkspaceProps {
   onNavigate?: (view: string) => void;
@@ -233,23 +234,35 @@ const SmartSummariserWorkspace: React.FC<SmartSummariserWorkspaceProps> = ({ onN
                 </div>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              {pageContent ? (
-                <div className="bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 pb-3 border-b border-neutral-100 dark:border-neutral-800">
-                    {selectedFileData?.name}
-                  </h2>
-                  <pre className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap font-sans">
-                    {pageContent}
-                  </pre>
+            <div className="flex-1 overflow-hidden">
+              {selectedFileData?.type === 'pdf' ? (
+                /* ── Inline PDF viewer ── */
+                <iframe
+                  key={selectedFileData._id}
+                  src={`http://localhost:5000/api/knowledge/download/${selectedFileData._id}`}
+                  className="w-full h-full border-0 rounded-b-xl"
+                  title={selectedFileData.name}
+                />
+              ) : pageContent ? (
+                /* ── Plain-text / note preview ── */
+                <div className="h-full overflow-y-auto p-6">
+                  <div className="bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-sm">
+                    <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 pb-3 border-b border-neutral-100 dark:border-neutral-800">
+                      {selectedFileData?.name}
+                    </h2>
+                    <pre className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap font-sans">
+                      {pageContent}
+                    </pre>
+                  </div>
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center">
+                /* ── Empty / unsupported fallback ── */
+                <div className="h-full flex flex-col items-center justify-center text-center p-6">
                   <FileText className="w-10 h-10 text-neutral-300 dark:text-neutral-600 mb-3" />
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {selectedFileData?.type === 'pdf' || selectedFileData?.type === 'docx'
-                      ? 'Document preview not available for binary files'
-                      : 'No content to preview'}
+                    {selectedFileData?.type === 'docx'
+                      ? 'DOCX preview is not yet supported'
+                      : 'Select a document to preview it here'}
                   </p>
                 </div>
               )}
@@ -330,9 +343,7 @@ const SmartSummariserWorkspace: React.FC<SmartSummariserWorkspaceProps> = ({ onN
                     <p className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-3">
                       Summary — {modeLabels[summaryMode]}
                     </p>
-                    <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
-                      {result}
-                    </div>
+                    <MarkdownRenderer content={result} />
                   </div>
 
                   {/* Action Buttons */}

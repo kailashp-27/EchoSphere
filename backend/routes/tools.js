@@ -4,26 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const Note = require('../models/Note');
 const Document = require('../models/Document');
-async function callOllama(prompt, modelName, format = null) {
-  const body = {
-    model: modelName,
-    prompt: prompt,
-    stream: false
-  };
-  if (format) {
-    body.format = format;
-  }
-  const response = await fetch('http://localhost:11434/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) {
-    throw new Error(`Ollama API error: ${response.statusText}`);
-  }
-  const data = await response.json();
-  return data.response;
-}
+const { callOllama } = require('../rag');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 

@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronUp, Download, Check, AlertCircle,
   Clock, RotateCw, BookOpen, Target, Hash
 } from 'lucide-react';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface ExamPredictorWorkspaceProps {
   onNavigate?: (view: string) => void;
@@ -322,7 +323,7 @@ const ExamPredictorWorkspace: React.FC<ExamPredictorWorkspaceProps> = ({ onNavig
                         {q.explanation && (
                           <div>
                             <span className="inline-block px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg mb-2">Explanation</span>
-                            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">{q.explanation}</p>
+                            <MarkdownRenderer content={q.explanation} className="text-xs" />
                           </div>
                         )}
                       </div>
