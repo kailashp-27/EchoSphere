@@ -73,6 +73,16 @@ To objectively evaluate Echosphere's success and operational efficiency, the fol
 *   **API Key Provision:** It is assumed that users will provide their own valid LLM API keys (e.g., Gemini) to power the application, shifting the API cost burden to the user in a localized deployment model.
 *   **Data Privacy Acceptance:** Users are willing to upload their personal, potentially sensitive study materials to the database with the understanding that the text will be processed via external LLM APIs for the purpose of generating responses.
 
+## 8. Software Design
+
+Echosphere's software architecture is built on a scalable, decoupled MERN-like stack (React, Node.js/Express, MongoDB) customized specifically to support intensive Retrieval-Augmented Generation (RAG) workloads. The modular design prioritizes strict data isolation and context confinement, guaranteeing that the AI engine processes only the user's explicit document corpus to prevent external hallucinations. Complementing the robust backend is a distraction-free, highly responsive frontend that facilitates seamless document ingestion, query execution, and interactive knowledge visualization.
+
+### Design Diagrams
+* [Draw.io Architecture Diagram](https://drive.google.com/file/d/1ni_RgGjN7F9XYarQekSw0qokId5tgqU7/view?usp=sharing)
+* [Figma UI/UX Wireframes](https://www.figma.com/make/o0oFJ9qgmdbQpxuekEYeyl/EchoSphere-Wireframe-Outline?t=tsLKVe3ktEjJpQcJ-20&fullscreen=1)
+
+*Note: The raw source design files are also available in the [`design/`](./design/) folder within this repository.*
+
 ## 🌿 Branching Strategy (GitHub Flow)
 
 For EchoSphere, we strictly adhere to the **GitHub Flow** branching strategy to maintain a clean, organized, and stable repository during development.
