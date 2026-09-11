@@ -8,6 +8,10 @@ const SavedPromptSchema = new mongoose.Schema({
   prompt: {
     type: String,
     required: true,
+  },
+  category: {
+    type: String,
+    default: 'General',
   }
 }, { timestamps: true });
 

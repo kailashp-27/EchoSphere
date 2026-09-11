@@ -3,6 +3,7 @@ import {
   ArrowLeft, Sparkles, Lightbulb, Check, Copy, Clock,
   BrainCircuit, AlertCircle, ChevronRight
 } from 'lucide-react';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface ConceptExplainerWorkspaceProps {
   onNavigate?: (view: string) => void;
@@ -267,9 +268,7 @@ const ConceptExplainerWorkspace: React.FC<ConceptExplainerWorkspaceProps> = ({ o
 
               {/* Result Body */}
               <div className="px-6 pb-6">
-                <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
-                  {result}
-                </div>
+                <MarkdownRenderer content={result} />
 
                 {/* Generation time + Copy */}
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">

@@ -285,8 +285,12 @@ router.get('/download/:id', async (req, res) => {
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'File not found on disk' });
     }
-    
-    res.download(filePath, doc.title);
+
+    // Send inline so browsers (and iframes) can render PDFs directly
+    const mimeType = doc.type === 'pdf' ? 'application/pdf' : 'application/octet-stream';
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.title)}"`);
+    res.sendFile(filePath);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to download file' });
