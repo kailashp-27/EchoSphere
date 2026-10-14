@@ -1,120 +1,83 @@
-# Vision Document: Echosphere
+# EchoSphere
 
-## 1. Project Name & Overview
+A study workspace for keeping notes and documents together and asking questions about them. Upload material, organise it into folders, and use the same collection for summaries, explanations, flashcards, and concept graphs.
 
-**Project Name:** Echosphere
+The app uses React and TypeScript on the frontend, Express on the backend, MongoDB for records, and LanceDB for document embeddings. AI features run through a local Ollama server.
 
-**Overview:** 
-Echosphere is a sophisticated, AI-powered personal learning environment and "smart chamber" designed to revolutionize how individuals interact with their personal knowledge bases. Built on a modern and scalable web stack (React frontend, Node.js/Express backend, and MongoDB for persistent storage), Echosphere leverages state-of-the-art Retrieval-Augmented Generation (RAG) technology. This architecture empowers users to upload, organize, and securely store an extensive array of personal study materials—including academic papers, lecture notes, textbooks, and proprietary research documents. 
+## What it does
 
-Unlike generic AI assistants that rely on pre-trained public data, Echosphere confines its context strictly to the user's uploaded data corpus. Users can query the integrated Large Language Model (LLM) to extract highly precise, context-aware answers, generate intelligent summaries, and visualize complex relationships without the risk of AI hallucination. Wrapped in an intuitive, distraction-free interface featuring customizable light/dark modes, sidebar navigation, and interactive knowledge graphs, Echosphere provides a seamless and deeply immersive ecosystem for accelerated learning and robust knowledge management.
+- Stores notes, PDF and DOCX uploads, and imported web content.
+- Retrieves relevant document passages for chat using `nomic-embed-text` embeddings.
+- Generates summaries, concept explanations, flashcards, and exam practice material.
+- Builds interactive concept graphs and saves reusable prompts.
 
-## 2. Problem it Solves
+Chat is prompted to use retrieved material. Answers can still be incomplete or wrong, particularly if parsing or indexing fails, so check them against the source.
 
-In the contemporary academic and professional landscape, individuals are increasingly paralyzed by acute information overload. The core issues Echosphere addresses include:
+## Run locally
 
-*   **Knowledge Fragmentation:** Crucial insights, data points, and concepts are frequently scattered across disparate file formats (PDFs, DOCX, TXT) and siloed note-taking applications, making holistic review nearly impossible.
-*   **Inefficiency of Traditional Search:** Standard keyword search mechanisms are rudimentary; they merely locate terms but fail to synthesize knowledge, extract nuanced context, or identify complex interdependencies between concepts across multiple documents.
-*   **The Hallucination Dilemma in AI:** While public LLMs (like ChatGPT or Gemini) are powerful, they frequently hallucinate or provide generalized information that is unacceptable for rigorous academic study or specialized professional research.
-*   **Friction in Information Retrieval:** The manual effort required to locate specific arguments, methodologies, or data within hundreds of pages of text disrupts cognitive flow and drastically reduces productivity.
+Use Node.js 22.12+, MongoDB, and Ollama. Start MongoDB locally, then pull the two default models:
 
-Echosphere mitigates these challenges by transforming static, unstructured document storage into a dynamic, interactive "smart chamber." It eliminates retrieval friction, ensuring that users can instantly extract synthesized insights and visualize conceptual connections derived *exclusively* from their trusted sources.
+```bash
+ollama pull nomic-embed-text
+ollama pull llama3.2:1b
+```
 
-## 3. Target Users (Personas)
+Keep Ollama running at `http://localhost:11434`.
 
-To ensure Echosphere meets distinct user needs, the platform is designed with the following primary personas in mind:
+```bash
+git clone https://github.com/kailashp-27/EchoSphere.git
+cd EchoSphere/backend
+npm install
+```
 
-### Persona 1: The University Student (e.g., Alex, 20)
-*   **Demographic & Background:** A junior university student double-majoring in Computer Science and Cognitive Psychology, handling a massive volume of dense coursework.
-*   **Pain Points:** Struggles to synthesize hundreds of pages of lecture slides, empirical research papers, and textbook chapters before midterms and finals. Alex frequently forgets where specific psychological theories were mapped to computational models across different semesters.
-*   **Goals & Use Case:** Alex needs a centralized hub to upload course syllabi, PDFs, and typed notes. Before a critical exam, Alex uses Echosphere to query, "Synthesize the relationship between neural networks and human cognitive memory models based on my Week 4 and Week 7 notes." Furthermore, Alex utilizes the knowledge graph to visually map dependencies between syllabus topics, drastically reducing study time and improving retention.
+Create `backend/.env`:
 
-### Persona 2: The Professional Researcher (e.g., Dr. Elena, 35)
-*   **Demographic & Background:** A postdoctoral researcher in Environmental Science currently conducting a comprehensive literature review for a meta-analysis on climate change mitigation strategies.
-*   **Pain Points:** Manages an unwieldy, constantly growing library of complex academic papers. Dr. Elena needs to meticulously cross-reference specific data points, statistical methodologies, and conclusions without the risk of AI tools fabricating information or pulling from irrelevant, non-peer-reviewed web sources.
-*   **Goals & Use Case:** Dr. Elena curates and uploads her localized library of PDFs to Echosphere. She relies on the system's strict RAG implementation to execute highly specific queries (e.g., "Extract the confidence intervals and sample sizes used in the carbon sequestration methodologies across all 2023 papers"). She trusts the output because Echosphere cites the exact documents and passages it used to generate the response.
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/echosphere
+PORT=5000
+```
 
-## 4. Vision Statement
+Start the API:
 
-*To empower lifelong learners and rigorous researchers by transforming static, fragmented data into an interactive, strictly contextualized engine of rapid knowledge discovery and profound synthesis.*
+```bash
+npm start
+```
 
-## 5. Key Features / Goals
+In another terminal, from the repository root:
 
-Echosphere's architecture is driven by the following core features and technical objectives:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-*   **Strict RAG-Based Querying Engine:** An intelligent conversational interface that utilizes Retrieval-Augmented Generation to answer complex, multi-faceted queries strictly based on the user's uploaded document corpus, virtually eliminating external AI hallucinations.
-*   **Comprehensive Document Ingestion & Parsing:** A robust backend system allowing users to upload, organize in folders, and permanently store various file formats (PDFs, DOCX, raw text). It utilizes optimized parsing libraries (`pdf-parse`, `mammoth`) to accurately extract and sanitize text.
-*   **Interactive Knowledge Graph Visualization:** Automated generation of dynamic, 2D physics-based network graphs (using `react-force-graph`). This tool visually maps out core concepts (Nodes) and their relationships/dependencies (Edges) automatically extracted from the selected documents.
-*   **Customizable "Smart Chamber" UI/UX:** A sleek, highly responsive React frontend designed for deep focus. It features intuitive sidebar navigation, configurable light/dark enterprise themes (via Tailwind CSS), and isolated workspaces for different AI tasks.
-*   **Modular AI Tools (Summarizer & Explainer):** 
-    *   *Smart Summarizer:* Condenses large, unwieldy documents into digestible formats, configurable by length (bullet points, medium overview, detailed report).
-    *   *Concept Explainer:* Employs the Feynman Technique, dynamically adapting explanations of complex topics to the user's chosen depth (e.g., beginner-friendly, child-like simplicity, or expert-level technical breakdown).
-*   **Secure & Dynamic Prompt Management:** A dedicated workspace to save, iterate, and manage custom AI prompts, coupled with dynamic API key configuration stored securely in the browser's local storage.
+Open [localhost:5173](http://localhost:5173). The API runs on port 5000. The default text model is `llama3.2:1b`; model selection is available in the interface.
 
-## 6. Success Metrics
+### A note about Docker
 
-To objectively evaluate Echosphere's success and operational efficiency, the following quantitative and qualitative metrics are established:
+Dockerfiles and a Compose file are included, but the current Compose configuration sets `MONGO_URI` while the backend reads `MONGODB_URI`. It also does not provide an Ollama service, and the backend currently calls Ollama at `localhost:11434`. Those addresses need adjusting for container use. The local setup above avoids these configuration mismatches.
 
-*   **Query Performance & Latency:** 95% of RAG-based queries must return accurate, fully contextualized responses within 3 to 5 seconds, ensuring a conversational and frictionless user experience.
-*   **Ingestion & Parsing Reliability:** Achieve a 99% success rate for parsing and vectorizing supported file types (PDF, DOCX) without significant data loss, text garbling, or formatting corruption.
-*   **User Retention & Engagement:** Attain a 60% Weekly Active User (WAU) retention rate among early adopters, with users executing an average of 10+ intelligent queries per active session.
-*   **Hallucination Rate (Fidelity Metric):** Maintain a near-zero (<1%) instance of AI hallucinations. This is measured via internal testing and user feedback mechanisms (e.g., upvote/downvote on RAG-generated answers for accuracy against the source text).
-*   **System Uptime:** Ensure 99.9% availability of the frontend interface and backend API services during peak usage hours.
+## How retrieval works
 
-## 7. Assumptions & Constraints
+Uploaded text is split into roughly 500-word chunks with a 50-word overlap. Ollama generates an embedding for each chunk, and LanceDB stores them in `lancedb_store/` at the repository root. Chat retrieves up to five nearby chunks and sends them with the question to the text model.
 
-### Technical & Operational Constraints
-*   **Third-Party LLM Dependency:** The core cognitive intelligence relies heavily on external LLM APIs (e.g., Google Gemini). The system is therefore subject to the provider's API rate limits, network latency, unpredictable downtime, and changing pricing structures.
-*   **Computational & Storage Overhead:** Processing, chunking, and embedding massive volumes of text (especially long-form academic textbooks) require significant backend memory and database storage (MongoDB). This may incur computational bottlenecks during the initial document ingestion phase.
-*   **Complex Document Parsing:** Extracting clean text from highly formatted PDFs (e.g., multi-column academic papers featuring complex mathematical formulas, embedded images, and intricate tables) is notoriously difficult and may result in imperfect data chunking.
+If retrieval is unavailable, chat falls back to a list of document titles. That fallback cannot answer detailed questions about the contents. Make sure `nomic-embed-text` is available before adding material, and check the backend logs if indexing fails.
 
-### Project Assumptions
-*   **User Technical Literacy:** It is assumed that target users possess a baseline understanding of digital file management (uploading/organizing files) and are comfortable interacting with conversational AI interfaces.
-*   **API Key Provision:** It is assumed that users will provide their own valid LLM API keys (e.g., Gemini) to power the application, shifting the API cost burden to the user in a localized deployment model.
-*   **Data Privacy Acceptance:** Users are willing to upload their personal, potentially sensitive study materials to the database with the understanding that the text will be processed via external LLM APIs for the purpose of generating responses.
+## Code guide
 
-## 8. Software Design
+| Path | Purpose |
+| --- | --- |
+| `frontend/src/components/` | Study tools, file explorer, graphs, and settings |
+| `backend/routes/knowledge.js` | Notes, folders, uploads, and content extraction |
+| `backend/rag.js` | Chunking, Ollama calls, and LanceDB retrieval |
+| `backend/routes/chat.js` | Chat context and response generation |
+| `backend/routes/tools.js` | Summaries, explanations, and practice tools |
 
-Echosphere's software architecture is built on a scalable, decoupled MERN-like stack (React, Node.js/Express, MongoDB) customized specifically to support intensive Retrieval-Augmented Generation (RAG) workloads. The modular design prioritizes strict data isolation and context confinement, guaranteeing that the AI engine processes only the user's explicit document corpus to prevent external hallucinations. Complementing the robust backend is a distraction-free, highly responsive frontend that facilitates seamless document ingestion, query execution, and interactive knowledge visualization.
+From `frontend/`, use `npm run build` for a production bundle and `npm run lint` to check the source.
 
-### Design Diagrams
-* [Draw.io Architecture Diagram](https://drive.google.com/file/d/1ni_RgGjN7F9XYarQekSw0qokId5tgqU7/view?usp=sharing)
-* [Figma UI/UX Wireframes](https://www.figma.com/make/o0oFJ9qgmdbQpxuekEYeyl/EchoSphere-Wireframe-Outline?fullscreen=1&t=5TR1E21N2il7zOKA-1&code-node-id=1-5)
+## Design references
 
-*Note: The raw source design files are also available in the [`design/`](./design/) folder within this repository.*
+- [Architecture diagram](https://drive.google.com/file/d/1ni_RgGjN7F9XYarQekSw0qokId5tgqU7/view?usp=sharing)
+- [Interface wireframes](https://www.figma.com/make/o0oFJ9qgmdbQpxuekEYeyl/EchoSphere-Wireframe-Outline)
 
-## 🌿 Branching Strategy (GitHub Flow)
-
-For EchoSphere, we strictly adhere to the **GitHub Flow** branching strategy to maintain a clean, organized, and stable repository during development.
-
-1. **`main` Branch:** This is the primary, production-ready branch. All code in `main` is stable and functional. Direct commits to `main` are avoided to prevent breaking the core application.
-2. **Feature Branches:** For every new module (e.g., Knowledge Graph, Concept Explainer), a dedicated branch is created from `main`. We use descriptive naming conventions such as:
-   * `feature/pdf-ingestion`
-   * `feature/knowledge-graph-ui`
-   * `bugfix/gemini-api-key-error`
-3. **Pull Requests (PRs):** Once a feature is complete locally, a Pull Request is opened against the `main` branch. This allows for code review and automated checks before integration.
-4. **Merge & Delete:** After a successful review and merge into `main`, the feature branch is deleted to keep the repository uncluttered.
-
-## 🚀 Quick Start – Local Development
-
-EchoSphere is fully containerized using Docker to ensure a seamless local development experience. You do not need to install MongoDB or Node.js locally on your host machine.
-
-### Prerequisites
-* [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running.
-
-### Running the Application
-1. Clone the repository and navigate to the root directory:
-   ```bash
-   git clone https://github.com/kailashp-27/EchoSphere.git
-   cd EchoSphere
-   ```
-
-2. Build and spin up the containers using Docker Compose:
-   ```bash
-   docker-compose up --build
-   ```
-
-3. Access the application:
-   * **Frontend UI:** Open your browser and navigate to http://localhost:5173
-   * **Backend API:** Running on http://localhost:5000
-   * **MongoDB:** Running locally on port 27017
+These describe the design work; the repository code is the reference for the current implementation.
