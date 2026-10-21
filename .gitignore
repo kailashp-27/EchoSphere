@@ -20,6 +20,18 @@ dist/
 build/
 backend/uploads/
 backend/lancedb_store/
+lancedb_store/
+.tools/
+backend/.stryker-tmp/
+backend/reports/
+artifacts/live-vectors/
+artifacts/live-uploads/
+artifacts/jest-uploads/
+
+# Downloaded browser helpers and duplicate capture files
+artifacts/browser-runtime/
+artifacts/**/page@*.webm
+artifacts/**/arial.ttf
 
 # IDEs and Editors
 .vscode/
